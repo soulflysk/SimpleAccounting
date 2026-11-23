@@ -1,0 +1,13 @@
+.disabled-row {
+  opacity: 0.45;
+  background-color: #f5f5f5;
+}
+
+.disabled-row td {
+  text-decoration: line-through;
+}
+
+/* ปุ่มในแถวที่ถูก "ไม่รวม" ไม่ต้องขีดฆ่า */
+.disabled-row td:last-child {
+  text-decoration: none;
+}
