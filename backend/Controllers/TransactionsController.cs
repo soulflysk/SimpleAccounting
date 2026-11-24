@@ -129,6 +129,21 @@ namespace Account.Controllers
             return new TransactionResultDto(ToDto(transaction), await GetSummaryAsync());
         }
 
+        // POST /api/transactions/set-disabled  { ids: [1,2,3], isDisabled: true }
+        [HttpPost("set-disabled")]
+        public async Task<ActionResult<BulkDisabledResultDto>> SetDisabled(SetDisabledRequest request)
+        {
+            var ids = request.Ids.Distinct().ToList();
+
+            if (ids.Count > 0)
+            {
+                await _context.Transactions
+                    .Where(x => ids.Contains(x.Id))
+                    .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDisabled, request.IsDisabled));
+            }
+
+            return new BulkDisabledResultDto(ids, request.IsDisabled, await GetSummaryAsync());
+        }
         // POST /api/transactions/import  (multipart/form-data, field: file)
         [HttpPost("import")]
         public async Task<ActionResult<ImportResultDto>> ImportExcel(IFormFile? file)

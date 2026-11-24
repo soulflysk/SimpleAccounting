@@ -48,4 +48,16 @@ namespace Account.Dtos
     public record ImportResultDto(int Imported, SummaryDto Summary);
 
     public record ErrorDto(string Message);
+    public class SetDisabledRequest
+    {
+        [Required]
+        public List<int> Ids { get; set; } = new();
+
+        public bool IsDisabled { get; set; }
+    }
+
+    public record BulkDisabledResultDto(
+        IReadOnlyList<int> Ids,
+        bool IsDisabled,
+        SummaryDto Summary);
 }

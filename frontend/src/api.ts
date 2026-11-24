@@ -1,4 +1,5 @@
 import type {
+  BulkDisabledResult,
   ImportResult,
   PagedTransactions,
   SaveTransactionRequest,
@@ -55,4 +56,9 @@ export const api = {
       body: form,
     });
   },
+  setDisabled: (ids: number[], isDisabled: boolean) =>
+  request<BulkDisabledResult>(
+    `${BASE}/set-disabled`,
+    json("POST", { ids, isDisabled })
+  ),
 };

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import ImportExcel from "./components/ImportExcel";
 import Pagination from "./components/Pagination";
@@ -29,7 +29,13 @@ export default function App() {
   } | null>(null);
 
   const summary = data?.summary ?? emptySummary;
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
+  const itemCount = data?.items.length ?? 0;
+  const checkedCount = data?.items.filter((x) => x.isDisabled).length ?? 0;
+  const allChecked = itemCount > 0 && checkedCount === itemCount;
+  const someChecked = checkedCount > 0 && checkedCount < itemCount;
   const load = useCallback(async (pageNumber: number) => {
     setLoading(true);
     try {
@@ -43,7 +49,9 @@ export default function App() {
       setLoading(false);
     }
   }, []);
-
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someChecked;
+  }, [someChecked]);
   useEffect(() => {
     load(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,11 +97,11 @@ export default function App() {
         ? {
             ...prev,
             items: prev.items.map((x) =>
-              x.id === id ? result.transaction : x
+              x.id === id ? result.transaction : x,
             ),
             summary: result.summary,
           }
-        : prev
+        : prev,
     );
   }
 
@@ -104,14 +112,37 @@ export default function App() {
         ? {
             ...prev,
             items: prev.items.map((x) =>
-              x.id === id ? result.transaction : x
+              x.id === id ? result.transaction : x,
             ),
             summary: result.summary,
           }
-        : prev
+        : prev,
     );
   }
-
+  async function handleToggleAll(checked: boolean) {
+    if (!data || data.items.length === 0) return;
+    setBulkBusy(true);
+    try {
+      const ids = data.items.map((x) => x.id);
+      const result = await run(() => api.setDisabled(ids, checked));
+      const changed = new Set(result.ids);
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              items: prev.items.map((x) =>
+                changed.has(x.id) ? { ...x, isDisabled: result.isDisabled } : x,
+              ),
+              summary: result.summary,
+            }
+          : prev,
+      );
+    } catch {
+      /* error แสดงแล้ว */
+    } finally {
+      setBulkBusy(false);
+    }
+  }
   async function handleDelete(id: number) {
     await run(() => api.remove(id));
     setMessage({ kind: "success", text: "ลบรายการเรียบร้อยแล้ว" });
@@ -168,7 +199,18 @@ export default function App() {
             <table className="table table-bordered table-hover">
               <thead className="table-light">
                 <tr>
-                  <th className="text-center">ไม่รวม</th>
+                  <th className="text-center">
+                    <div>ไม่รวม</div>
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      className="form-check-input"
+                      title="เลือก/ยกเลิกทั้งหมดในหน้านี้"
+                      checked={allChecked}
+                      disabled={bulkBusy || loading || itemCount === 0}
+                      onChange={(e) => handleToggleAll(e.target.checked)}
+                    />
+                  </th>
                   <th>วันที่</th>
                   <th>ประเภท</th>
                   <th>รายการ</th>

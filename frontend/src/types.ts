@@ -41,3 +41,8 @@ export interface SaveTransactionRequest {
   description: string;
   unitPrice: number;
 }
+export interface BulkDisabledResult {
+  ids: number[];
+  isDisabled: boolean;
+  summary: Summary;
+}
